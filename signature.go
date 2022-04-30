@@ -2,7 +2,7 @@ package github_webhook
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"fmt"
@@ -24,19 +24,19 @@ func validateSignature(secretEnvVarName string, rawPayload []byte, r *http.Reque
 	if rawSignature == "" {
 		return fmt.Errorf("signature is empty")
 	}
-	if !strings.HasPrefix(rawSignature, "sha1=") {
+	if !strings.HasPrefix(rawSignature, "sha256=") {
 		return fmt.Errorf("malformed signature: %s", rawSignature[:10])
 	}
 
 	signature := []byte(rawSignature)
 
-	hash := hmac.New(sha1.New, []byte(secretToken))
+	hash := hmac.New(sha256.New, []byte(secretToken))
 
 	if _, err := hash.Write(rawPayload); err != nil {
 		return fmt.Errorf("could not calculate hash for payload: %s", err)
 	}
 
-	calculatedHash := []byte("sha1=" + hex.EncodeToString(hash.Sum(nil)))
+	calculatedHash := []byte("sha256=" + hex.EncodeToString(hash.Sum(nil)))
 
 	if 1 != subtle.ConstantTimeEq(int32(len(calculatedHash)), int32(len(signature))) {
 		return fmt.Errorf("signature length mismatch")
