@@ -3,6 +3,7 @@ package github_webhook
 import (
 	"fmt"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"log"
 	"net/http"
 	"os"
@@ -43,6 +44,9 @@ func NewServer(bindAddr, urlPath, secretEnvVarName string, maxPayloadSize int, h
 
 func (s *Server) Serve() error {
 	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
 	router.Post(s.urlPath, newRequestHandler(s.handlerFunc, s.secretEnvVarName, s.maxPayloadSize))
 	log.Printf("starting github webhook server, listening on: %s, url path: %s\n", s.bindAddr, s.urlPath)
 	if err := http.ListenAndServe(s.bindAddr, router); err != nil {
